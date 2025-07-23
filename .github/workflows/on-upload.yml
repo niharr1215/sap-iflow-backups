@@ -1,0 +1,56 @@
+name: Detect Metadata Changes, Call iFlow, and Update Data
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-metadata:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Detect change in metadata file
+        id: check_changes
+        run: |
+          METADATA_FILE="PFAD ZUR DATEI"
+
+          # Check if the metadata file has changed compared to the previous commit
+          if git diff HEAD^ HEAD -- "$METADATA_FILE" | grep -q "$METADATA_FILE"; then
+            echo "change_detected=true" >> $GITHUB_OUTPUT
+            echo "Metadata file has changed."
+          else
+            echo "change_detected=false" >> $GITHUB_OUTPUT
+            echo "No change in metadata file."
+          fi
+
+      - name: Call iFlow to download output if metadata changed
+        if: ${{ steps.check_changes.outputs.change_detected == 'true' }}
+        run: |
+          # Replace URL with your actual iFlow endpoint
+          IFlow_URL="https://your-iflow-endpoint.com/api/download"
+
+          # Call the iFlow to get the output
+          curl -X POST "$IFlow_URL" -o output_from_iflow.json
+
+          echo "Output from iFlow downloaded."
+
+      - name: Upload output to repository if changed
+        if: ${{ steps.check_changes.outputs.change_detected == 'true' }}
+        run: |
+          git config --local user.email "das.vali@googlemail.com"
+          git config --local user.name "USER"
+
+          # Add the new/updated output file
+          git add output_from_iflow.json
+
+          # Commit only if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Update output from iFlow based on metadata change"
+            git push
+          else
+            echo "No changes to commit."
+          fi
