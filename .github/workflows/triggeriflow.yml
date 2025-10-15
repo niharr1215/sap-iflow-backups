@@ -28,7 +28,8 @@ jobs:
       - name: Trigger iFlow
         run: |
           curl --request POST \
-            --url "https://<your-iflow-endpoint>" \
+            --url "https://68913245trial.it-cpitrial05-rt.cfapps.us10-001.hana.ondemand.com/http/dummyiflow" \
             --header "Authorization: Bearer ${{ steps.get_token.outputs.token }}" \
             --header "Content-Type: application/json" \
             --data '{"sample":"payload"}'
+
