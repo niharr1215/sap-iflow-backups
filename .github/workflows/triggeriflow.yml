@@ -1,0 +1,34 @@
+name: Trigger SAP iFlow
+
+on:
+  push:
+    branches:
+      - main  # Easily triggered by pushing to main
+
+jobs:
+  trigger-iflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get OAuth token
+        id: get_token
+        run: |
+          response=$(curl --request POST \
+            --url "${{ secrets.TOKEN_URL }}" \
+            --header "Content-Type: application/x-www-form-urlencoded" \
+            --data "grant_type=client_credentials&client_id=${{ secrets.CLIENT_ID }}&client_secret=${{ secrets.CLIENT_SECRET }}")
+          echo "response=$response"
+          access_token=$(echo $response | jq -r '.access_token')
+          echo "access_token=$access_token"
+          echo "token=$access_token" >> $GITHUB_OUTPUT
+
+      - name: Trigger iFlow
+        run: |
+          curl --request POST \
+            --url "https://<your-iflow-endpoint>" \
+            --header "Authorization: Bearer ${{ steps.get_token.outputs.token }}" \
+            --header "Content-Type: application/json" \
+            --data '{"sample":"payload"}'
